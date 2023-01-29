@@ -1,103 +1,124 @@
-// import React, { useState, useEffect } from "react";
-// import NewsList from "./components/NewsList";
-
-// const App = () => {
-//   const [articles, setArticles] = useState([]);
-
-//   useEffect(() => {
-//     fetch("http://localhost:3001/articles")
-//       .then((res) => res.json())
-//       .then((data) => setArticles(data.articles));
-//   }, []);
-
-//   return (
-//     <div>
-//       <section class="hero is-small is-link">
-//       <div class="hero-body">
-//       <p class="title">NewsApp </p>
-//           </div>
-//         </section>
-//         <NewsList articles={articles} />
-//     </div>
-//   );
-// };
-
-// export default App;
-
 import React, { useState, useEffect } from "react";
 import NewsList from "./components/NewsList";
+import axios from "axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const App = () => {
+  var yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
   const [articles, setArticles] = useState([]);
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState(yesterday);
+  const [endDate, setEndDate] = useState(new Date());
+
+  const API_URL_HEADLINES = "https://newsapi.org/v2/top-headlines";
+  const API_URL_EVERYTHING = "https://newsapi.org/v2/everything";
+  const API_KEY = "API_KEY";
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    fetch("http://localhost:3001/articles", {
-      method: "POST",
-      body: JSON.stringify({ page, search }),
-      headers: {
-        "Content-type": "application/json; charset=UTF-8",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setArticles(data.articles));
-  };
-
-  useEffect(() => {
-    fetch("http://localhost:3001/articles", {
-      method: "POST",
-      body: JSON.stringify({ page, search }),
-      headers: {
-        "Content-type": "application/json; charset=UTF-8",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setArticles(data.articles));
-
-    // Add event listener for scroll event
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      // Remove event listener when component unmounts
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [page]);
-
-  const handleScroll = () => {
-    // Check if user has scrolled to bottom of the page
-    if (
-      window.innerHeight + document.documentElement.scrollTop ===
-      document.documentElement.offsetHeight
-    ) {
-      setPage(page + 1);
+    if (search) {
+      axios
+        .get(API_URL_EVERYTHING, {
+          params: {
+            q: search,
+            language: "en",
+            pageSize: 100,
+            apiKey: API_KEY,
+            from: startDate,
+            to: endDate,
+          },
+        })
+        .then((res) => {
+          setArticles(res.data.articles);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    } else {
+      axios
+        .get(API_URL_EVERYTHING, {
+          params: {
+            domains: "cnn.com,bbc.com",
+            language: "en",
+            pageSize: 100,
+            apiKey: API_KEY,
+            from: startDate,
+            to: endDate,
+          },
+        })
+        .then((res) => {
+          setArticles(res.data.articles);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   };
 
+  useEffect(() => {
+    axios
+      .get(API_URL_HEADLINES, {
+        params: {
+          q: search,
+          country: "us",
+          pageSize: 100,
+          apiKey: API_KEY,
+        },
+      })
+      .then((res) => {
+        setArticles(res.data.articles);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
   return (
     <div>
-      <div className="hero is-small is-link">
+      <section className="hero is-small is-black">
         <div className="hero-body">
           <p className="title">NewsFront </p>
         </div>
-      </div>
+      </section>
 
-      <form onSubmit={handleSubmit} className="field is-grouped">
-        <p className="control is-expanded">
-          <input
-            className="input"
-            type="text"
-            placeholder="Search for news..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </p>
-        <p className="control">
-          <button type="submit" className="button is-success">
-            Search
-          </button>
-        </p>
+      <form onSubmit={handleSubmit} className="box">
+        <div className="field is-horizontal is-grouped">
+          <p className="control is-expanded">
+            <input
+              className="input"
+              type="text"
+              placeholder="Search for news..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </p>
+
+          <p className="control">
+            <button type="submit" className="button is-dark">
+              Search
+            </button>
+          </p>
+        </div>
+
+        <div className="field is-horizontal is-grouped">
+          <div className="control is-expanded">
+            <DatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date)}
+              className="input"
+            />
+          </div>
+          <div className="control is-expanded">
+            <DatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date)}
+              className="input"
+            />
+          </div>
+        </div>
       </form>
 
       <NewsList articles={articles} />

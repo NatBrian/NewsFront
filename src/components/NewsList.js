@@ -2,8 +2,6 @@ import React from "react";
 import Article from "./Article";
 
 const NewsList = (props) => {
-  let str = "28/06/2018 01:30:20";
-
   return (
     <div>
       <ul className="collection">
@@ -16,10 +14,9 @@ const NewsList = (props) => {
               urlToImage={article.urlToImage}
               url={article.url}
               author={article.author}
-              publishedAt={str.replace(
-                article.publishedAt,
-                (_, a, b, c) => c + "-" + b + "-" + a
-              )}
+              publishedAt={
+                article.publishedAt.replace('Z', ' ').replace('T', ' ')
+              }
             />
           );
         })}

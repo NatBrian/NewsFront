@@ -24,7 +24,7 @@ const Article = (props) => {
           href={props.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="button is-danger"
+          className="button is-dark"
         >
           Read More
         </a>
