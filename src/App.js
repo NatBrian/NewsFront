@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import NewsList from "./components/NewsList";
 import axios from "axios";
 import DatePicker from "react-datepicker";
-import MY_API_KEY from "apikey.js"
 import "react-datepicker/dist/react-datepicker.css";
 
 const App = () => {
@@ -16,7 +15,7 @@ const App = () => {
 
   const API_URL_HEADLINES = "https://newsapi.org/v2/top-headlines";
   const API_URL_EVERYTHING = "https://newsapi.org/v2/everything";
-  const API_KEY = MY_API_KEY;
+  const API_KEY = process.env.REACT_APP_API_KEY;
 
   const handleSubmit = (event) => {
     event.preventDefault();
