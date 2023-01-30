@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import NewsList from "./components/NewsList";
 import axios from "axios";
 import DatePicker from "react-datepicker";
+import InfiniteScroll from "react-infinite-scroll-component";
 import "react-datepicker/dist/react-datepicker.css";
 
 const App = () => {
@@ -17,21 +18,41 @@ const App = () => {
   const API_URL_EVERYTHING = "https://gnews.io/api/v4/search";
   const API_KEY = process.env.REACT_APP_API_KEY;
 
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   useEffect(() => {
-    axios
-      .get(API_URL_HEADLINES, {
-        params: {
-          lang: "en",
-          token: API_KEY,
-        },
-      })
-      .then((res) => {
-        setArticles(res.data.articles);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      fetchArticles();
   }, []);
+
+  const fetchArticles = () => {
+      if (page > 2) { // set page limit since this is a free API
+        console.log("max page: ", page)
+        return;
+      }
+
+      axios
+        .get(API_URL_HEADLINES, {
+          params: {
+            lang: "en",
+            token: API_KEY,
+            page: page
+          },
+        })
+        .then((res) => {
+          setArticles([...articles, ...res.data.articles]);
+          setPage(page + 1);
+          if (res.data.articles.length === 0) {
+            setHasMore(false);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+
+      console.log(page)
+  };
 
   const handleSubmitSearch = (event) => {
     event.preventDefault();
@@ -230,7 +251,20 @@ const App = () => {
         </div>
       </nav>
 
-      <NewsList articles={articles} />
+      <InfiniteScroll
+        dataLength={articles.length}
+        next={fetchArticles}
+        hasMore={hasMore}
+        loader={<div className="loader"></div>}
+        endMessage={
+          <p style={{ textAlign: "center" }}>
+            <b>Yay! You have seen it all</b>
+          </p>
+        }
+      >
+        <NewsList articles={articles} />
+      </InfiniteScroll>
+      
     </div>
   );
 };
