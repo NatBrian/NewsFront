@@ -11,12 +11,11 @@ const NewsList = (props) => {
               key={index}
               title={article.title}
               description={article.description}
-              urlToImage={article.urlToImage}
+              image={article.image}
               url={article.url}
-              author={article.author}
-              publishedAt={
-                article.publishedAt.replace('Z', ' ').replace('T', ' ')
-              }
+              publishedAt={article.publishedAt
+                .replace("Z", " ")
+                .replace("T", " ")}
             />
           );
         })}

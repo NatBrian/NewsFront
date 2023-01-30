@@ -10,62 +10,19 @@ const App = () => {
 
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState(yesterday);
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
-  const API_URL_HEADLINES = "https://newsapi.org/v2/top-headlines";
-  const API_URL_EVERYTHING = "https://newsapi.org/v2/everything";
+  const API_URL_HEADLINES = "https://gnews.io/api/v4/top-headlines";
+  const API_URL_EVERYTHING = "https://gnews.io/api/v4/search";
   const API_KEY = process.env.REACT_APP_API_KEY;
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (search) {
-      axios
-        .get(API_URL_EVERYTHING, {
-          params: {
-            q: search,
-            language: "en",
-            pageSize: 100,
-            apiKey: API_KEY,
-            from: startDate,
-            to: endDate,
-          },
-        })
-        .then((res) => {
-          setArticles(res.data.articles);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    } else {
-      axios
-        .get(API_URL_EVERYTHING, {
-          params: {
-            domains: "cnn.com,bbc.com",
-            language: "en",
-            pageSize: 100,
-            apiKey: API_KEY,
-            from: startDate,
-            to: endDate,
-          },
-        })
-        .then((res) => {
-          setArticles(res.data.articles);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }
-  };
 
   useEffect(() => {
     axios
       .get(API_URL_HEADLINES, {
         params: {
-          q: search,
-          country: "us",
-          pageSize: 100,
-          apiKey: API_KEY,
+          lang: "en",
+          token: API_KEY,
         },
       })
       .then((res) => {
@@ -76,50 +33,202 @@ const App = () => {
       });
   }, []);
 
+  const handleSubmitSearch = (event) => {
+    event.preventDefault();
+
+    if (search === "" && startDate === null && endDate === null) {
+      console.log("skip search");
+      return;
+    }
+
+    let searchAPI = "";
+    if (search) {
+      searchAPI = API_URL_EVERYTHING;
+    } else {
+      searchAPI = API_URL_HEADLINES;
+    }
+
+    if (startDate !== null && endDate !== null && startDate > endDate) {
+      console.log("startDate > endDate");
+      return;
+    }
+    if (startDate !== null) {
+      startDate.setHours(0, 0, 0, 0);
+    }
+    if (endDate !== null) {
+      endDate.setHours(24, 0, 0, 0);
+    }
+
+    // console.log(startDate, endDate, search);
+
+    axios
+      .get(searchAPI, {
+        params: {
+          ...(search !== "" && { q: search }),
+          lang: "en",
+          token: API_KEY,
+          ...(startDate !== null && {
+            from: startDate.toISOString().split(".")[0] + "Z",
+          }),
+          ...(endDate !== null && {
+            to: endDate.toISOString().split(".")[0] + "Z",
+          }),
+          sortby: "relevance",
+        },
+      })
+      .then((res) => {
+        setArticles(res.data.articles);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const [isActive, setIsActive] = useState(false);
+
+  const handleTopicChange = (event) => {
+    event.preventDefault();
+
+    console.log(event.target.dataset.value);
+
+    axios
+      .get(API_URL_HEADLINES, {
+        params: {
+          lang: "en",
+          token: API_KEY,
+          topic: event.target.dataset.value,
+        },
+      })
+      .then((res) => {
+        setArticles(res.data.articles);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const handleClick = () => {
+    setIsActive(!isActive);
+  };
+
   return (
+
     <div>
-      <section className="hero is-small is-black">
-        <div className="hero-body">
-          <p className="title">NewsFront </p>
-        </div>
-      </section>
-
-      <form onSubmit={handleSubmit} className="box">
-        <div className="field is-horizontal is-grouped">
-          <p className="control is-expanded">
-            <input
-              className="input"
-              type="text"
-              placeholder="Search for news..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </p>
-
-          <p className="control">
-            <button type="submit" className="button is-dark">
-              Search
-            </button>
-          </p>
-        </div>
-
-        <div className="field is-horizontal is-grouped">
-          <div className="control is-expanded">
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              className="input"
-            />
+      <nav
+        className="navbar hero is-top is-black"
+        role="navigation"
+        aria-label="main navigation"
+      >
+        <div className="navbar-brand">
+          <div className="navbar-item">
+            <p className="title">NewsFront </p>
           </div>
-          <div className="control is-expanded">
-            <DatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              className="input"
-            />
+
+          <a
+            role="button"
+            className={`navbar-burger burger ${isActive ? "is-active" : ""}`}
+            aria-label="menu"
+            aria-expanded="false"
+            onClick={handleClick}
+          >
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </a>
+        </div>
+
+        <div className={`navbar-menu ${isActive ? "is-active" : ""}`}>
+          <div className="navbar-start">
+            <div className="navbar-item">
+              <div className="content">
+                <div className="field has-addons">
+                  <div className="control is-expanded">
+                    <input
+                      className="input"
+                      type="text"
+                      placeholder="Search for news..."
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                  </div>
+                  <div className="control">
+                    <button
+                      className="button is-dark"
+                      onClick={handleSubmitSearch}
+                    >
+                      Search
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="navbar-item">
+              <div className="field is-horizontal is-grouped">
+                <div className="control is-expanded">
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    className="input"
+                    placeholderText={"01/29/2023"}
+                  />
+                </div>
+                <div className="control is-expanded">
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    className="input"
+                    placeholderText={"01/30/2023"}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="navbar-item">
+              <a
+                href="#"
+                data-value={"breaking-news"}
+                onClick={handleTopicChange}
+              >
+                Breaking News
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a href="#" data-value={"business"} onClick={handleTopicChange}>
+                Business
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a href="#" data-value="technology" onClick={handleTopicChange}>
+                Technology
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a
+                href="#"
+                data-value={"entertainment"}
+                onClick={handleTopicChange}
+              >
+                Entertainment
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a href="#" data-value={"science"} onClick={handleTopicChange}>
+                Science
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a href="#" data-value={"sports"} onClick={handleTopicChange}>
+                Sports
+              </a>
+            </div>
+            <div className="navbar-item">
+              <a href="#" data-value={"health"} onClick={handleTopicChange}>
+                Health
+              </a>
+            </div>
           </div>
         </div>
-      </form>
+      </nav>
 
       <NewsList articles={articles} />
     </div>
