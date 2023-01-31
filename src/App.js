@@ -27,8 +27,9 @@ const App = () => {
   }, []);
 
   const fetchArticles = () => {
-      if (page > 2) { // set page limit since this is a free API
+      if (page > 1) { // set page limit since this is a free API
         console.log("max page: ", page)
+        setHasMore(false);
         return;
       }
 
